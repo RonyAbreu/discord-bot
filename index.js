@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { Client, GatewayIntentBits } from 'discord.js';
 
+// Configurações do dotenv
 dotenv.config();
 
 // Configuração do cliente Discord
@@ -14,6 +15,8 @@ const client = new Client({
 });
 
 const TOKEN = process.env.DISCORD_TOKEN;
+
+// Lista de canais permitidos para ponto
 const canaisPermitidos = [
     '🚓 𝐏𝐓𝐑 ¹',
     '🚓 𝐏𝐓𝐑 ²',
@@ -22,8 +25,13 @@ const canaisPermitidos = [
     '🚓 𝐏𝐓𝐑 BRAVO',
     '🚓 𝐏𝐓𝐑 CHARLIE',
     '🚓 𝐏𝐓𝐑 DELTA',
+    '🚓 𝐏𝐓𝐑 fundadores'
 ];
+
+// Nome do canal de bate-ponto
 const canalBatePonto = '📲・𝐁𝐚𝐭𝐞-𝐏𝐨𝐧𝐭𝐨';
+
+// Objeto para armazenar os dados dos pontos
 const pontos = {};
 
 // Função para formatar data/hora
@@ -34,17 +42,8 @@ function formatarDataHora(data) {
     });
 }
 
-// Função para calcular duração
-function calcularDuracao(inicio, fim) {
-    const duracao = (fim - inicio) / 1000;
-    const horas = Math.floor(duracao / 3600);
-    const minutos = Math.floor((duracao % 3600) / 60);
-    const segundos = Math.floor(duracao % 60);
-    return `${horas}h ${minutos}m ${segundos}s`;
-}
-
-// Função para verificar canal permitido
-function verificarCanalPermitido(message) {
+// Função para validar se a mensagem foi enviada no canal correto
+function verificarCanal(message) {
     if (message.channel.name !== canalBatePonto) {
         message.reply(
             `⛔ Os comandos do bot só podem ser utilizados no canal **${canalBatePonto}**.`
@@ -55,7 +54,11 @@ function verificarCanalPermitido(message) {
 }
 
 // Função para abrir ponto
-function abrirPonto(userId, username, voiceChannel, message) {
+function abrirPonto(message, userId) {
+    const guild = message.guild;
+    const voiceState = guild.members.cache.get(userId)?.voice;
+    const voiceChannel = voiceState?.channel;
+
     if (!voiceChannel || !canaisPermitidos.includes(voiceChannel.name)) {
         return message.reply(
             '⛔ Você precisa estar conectado a um dos canais permitidos para bater o ponto!'
@@ -64,87 +67,93 @@ function abrirPonto(userId, username, voiceChannel, message) {
 
     if (pontos[userId]?.aberto) {
         return message.reply(
-            `⛔ **Ponto já aberto!**\nVocê já tem um ponto aberto, ${username}.\nUse \`!bater\` para finalizar o ponto.`
+            `⛔ **Ponto já aberto!**\nVocê já tem um ponto aberto, ${message.author.username}.\nUse \`!bater\` para finalizar o ponto.`
         );
     }
 
     pontos[userId] = {
-        nome: username,
+        nome: message.author.username,
         inicio: new Date(),
         aberto: true,
     };
 
-    message.reply(
-        `📅 **Ponto aberto com sucesso!**\n\n**Usuário:** ${username}\n🕒 **Início:** ${formatarDataHora(
-            pontos[userId].inicio
-        )}`
+    return message.reply(
+        `📅 **Ponto aberto com sucesso!**\n\n**Usuário:** ${message.author.username}\n🕒 **Início:** ${formatarDataHora(pontos[userId].inicio)}`
     );
 }
 
 // Função para fechar ponto
-function fecharPonto(userId, username, message) {
-    const ponto = pontos[userId];
-    if (!ponto?.aberto) {
+function fecharPonto(message, userId) {
+    if (!pontos[userId]?.aberto) {
         return message.reply('⛔ Você não tem nenhum ponto aberto para fechar.');
     }
 
-    const inicio = ponto.inicio;
+    const inicio = pontos[userId].inicio;
     const fim = new Date();
+    const duracao = (fim - inicio) / 1000;
+    const horas = Math.floor(duracao / 3600);
+    const minutos = Math.floor((duracao % 3600) / 60);
+    const segundos = Math.floor(duracao % 60);
+
     pontos[userId] = {
-        ...ponto,
+        ...pontos[userId],
         fim: fim,
         aberto: false,
-        duracao: calcularDuracao(inicio, fim),
+        duracao: `${horas}h ${minutos}m ${segundos}s`,
     };
 
-    message.reply(
-        `📅 **Ponto fechado com sucesso!**\n\n**Usuário:** ${username}\n🕒 **Início:** ${formatarDataHora(
-            inicio
-        )}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${pontos[userId].duracao}`
+    return message.reply(
+        `📅 **Ponto fechado com sucesso!**\n\n**Usuário:** ${message.author.username}\n🕒 **Início:** ${formatarDataHora(inicio)}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${pontos[userId].duracao}`
     );
 }
 
-// Função para exibir ponto
-function exibirPonto(userId, message) {
-    const ponto = pontos[userId];
-    if (!ponto) {
+// Função para visualizar o ponto
+function visualizarPonto(message, userId) {
+    if (!pontos[userId]) {
         return message.reply('⛔ Você não tem nenhum registro de ponto.');
     }
 
-    const { nome, inicio, fim, duracao, aberto } = ponto;
+    const { nome, inicio, fim, duracao, aberto } = pontos[userId];
     const detalhes = aberto
         ? `🕒 **Início:** ${formatarDataHora(inicio)}\n⏳ **Status:** Ponto Aberto`
-        : `🕒 **Início:** ${formatarDataHora(inicio)}\n🕒 **Fim:** ${formatarDataHora(
-              fim
-          )}\n⏳ **Duração:** ${duracao}`;
+        : `🕒 **Início:** ${formatarDataHora(inicio)}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${duracao}`;
 
-    message.reply(`📋 **Dados do Ponto de ${nome}:**\n\n${detalhes}`);
+    return message.reply(`📋 **Dados do Ponto de ${nome}:**\n\n${detalhes}`);
 }
 
-// Evento de mensagem
-client.on('messageCreate', (message) => {
-    if (message.author.bot) return;
-
-    if (!verificarCanalPermitido(message)) return;
-
-    const userId = message.author.id;
-    const username = message.author.username;
-    const guild = message.guild;
-    const voiceChannel = guild.members.cache.get(userId)?.voice.channel;
-
-    if (message.content === '!ponto') return abrirPonto(userId, username, voiceChannel, message);
-
-    if (message.content === '!bater') return fecharPonto(userId, username, message);
-
-    if (message.content === '!meuponto') return exibirPonto(userId, message);
+// Evento quando o bot está pronto
+client.once('ready', () => {
+    console.log(`Bot está online! Logado como ${client.user.tag}`);
 });
 
-// Evento de atualização de estado de voz
+// Evento para lidar com mensagens
+client.on('messageCreate', (message) => {
+    if (message.author.bot || !message.content.startsWith('!')) return;
+
+    const userId = message.author.id;
+
+    // Verificar se a mensagem foi enviada no canal correto
+    if (!verificarCanal(message)) return;
+
+    if (message.content === '!ponto') {
+        abrirPonto(message, userId);
+    }
+
+    if (message.content === '!fechar') {
+        fecharPonto(message, userId);
+    }
+
+    if (message.content === '!meuponto') {
+        visualizarPonto(message, userId);
+    }
+});
+
+// Fechar o ponto automaticamente ao sair dos canais permitidos
 client.on('voiceStateUpdate', (oldState, newState) => {
     const userId = oldState.id;
-    const ponto = pontos[userId];
+    const userPoint = pontos[userId];
 
-    if (!ponto?.aberto) return;
+    if (!userPoint?.aberto) return;
 
     const oldChannelName = oldState.channel?.name;
     const newChannelName = newState.channel?.name;
@@ -154,13 +163,18 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         canaisPermitidos.includes(oldChannelName) &&
         (!newChannelName || !canaisPermitidos.includes(newChannelName))
     ) {
-        const inicio = ponto.inicio;
+        const inicio = userPoint.inicio;
         const fim = new Date();
+        const duracao = (fim - inicio) / 1000;
+        const horas = Math.floor(duracao / 3600);
+        const minutos = Math.floor((duracao % 3600) / 60);
+        const segundos = Math.floor(duracao % 60);
+
         pontos[userId] = {
-            ...ponto,
+            ...userPoint,
             fim: fim,
             aberto: false,
-            duracao: calcularDuracao(inicio, fim),
+            duracao: `${horas}h ${minutos}m ${segundos}s`,
         };
 
         const guild = oldState.guild;
@@ -170,17 +184,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
         if (batePontoChannel) {
             batePontoChannel.send(
-                `📅 **Ponto fechado automaticamente!**\n\n**Usuário:** ${ponto.nome}\n🕒 **Início:** ${formatarDataHora(
-                    inicio
-                )}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${pontos[userId].duracao}`
+                `📅 **Ponto fechado automaticamente!**\n\n**Usuário:** ${userPoint.nome}\n🕒 **Início:** ${formatarDataHora(inicio)}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${pontos[userId].duracao}`
             );
         }
     }
 });
 
 // Login do bot
-client.once('ready', () => {
-    console.log(`Bot está online! Logado como ${client.user.tag}`);
-});
-
 client.login(TOKEN);
