@@ -45,9 +45,19 @@ function formatarDataHora(data) {
 // Função para validar se a mensagem foi enviada no canal correto
 function verificarCanal(message) {
     if (message.channel.name !== canalBatePonto) {
-        message.reply(
-            `⛔ Os comandos do bot só podem ser utilizados no canal **${canalBatePonto}**.`
-        );
+        message.reply({
+            embeds: [
+                {
+                    color: 0xff9800, // Laranja
+                    title: "Comando Inválido!",
+                    description: `Os comandos do bot só podem ser utilizados no canal **${canalBatePonto}**.`,
+                    footer: {
+                        text: "Por favor, use o canal correto.",
+                    },
+                    timestamp: new Date(),
+                },
+            ],
+        });
         return false;
     }
     return true;
@@ -60,15 +70,33 @@ function abrirPonto(message, userId) {
     const voiceChannel = voiceState?.channel;
 
     if (!voiceChannel || !canaisPermitidos.includes(voiceChannel.name)) {
-        return message.reply(
-            '⛔ Você precisa estar conectado a um dos canais permitidos para bater o ponto!'
-        );
+        return message.reply({
+            embeds: [
+                {
+                    color: 0x2196f3, // Azul
+                    title: "Você precisa estar conectado a um dos canais permitidos para bater o ponto!",
+                    footer: {
+                        text: "Tente alguma call de patrulha! 👮‍♂️",
+                    },
+                    timestamp: new Date(),
+                },
+            ],
+        });
     }
 
     if (pontos[userId]?.aberto) {
-        return message.reply(
-            `⛔ **Ponto já aberto!**\nVocê já tem um ponto aberto, ${message.author.username}.\nUse \`!fechar\` para finalizar o ponto.`
-        );
+        return message.reply({
+            embeds: [
+                {
+                    color: 0x2196f3, // Azul
+                    title: "Você já tem um ponto aberto",
+                    footer: {
+                        text: "Acontece guerreiro 👮‍♂️",
+                    },
+                    timestamp: new Date(),
+                },
+            ],
+        });
     }
 
     pontos[userId] = {
@@ -77,9 +105,36 @@ function abrirPonto(message, userId) {
         aberto: true,
     };
 
-    return message.reply(
-        `📅 **Ponto aberto com sucesso!**\n\n**Usuário:** ${message.author.username}\n🕒 **Início:** ${formatarDataHora(pontos[userId].inicio)}`
-    );
+    return message.reply({
+        embeds: [
+            {
+                color: 0x4caf50, // Verde
+                title: "Ponto Aberto com Sucesso!",
+                description: `**Usuário:** ${message.author.username}\n\n**Início:** ${formatarDataHora(pontos[userId].inicio)}`,
+                footer: {
+                    text: "Use !fechar para encerrar o ponto.",
+                },
+                timestamp: new Date(),
+            },
+        ],
+    });
+}
+
+// Info comandos
+function infoPonto(message) {
+    return message.reply({
+        embeds: [
+            {
+                color: 0x2196f3, // Azul
+                title: "Comandos",
+                description: `**!ponto**  *-*  Abrir  bate  ponto\n\n**!fechar**  *-*  Fechar  bate  ponto\n\n**!info**  *-*  Todos  os  comandos`,
+                footer: {
+                    text: "👮‍♂️👮‍♀️"
+                },
+                timestamp: new Date(),
+            },
+        ],
+    });
 }
 
 // Função para fechar ponto
@@ -102,9 +157,19 @@ function fecharPonto(message, userId) {
         duracao: `${horas}h ${minutos}m ${segundos}s`,
     };
 
-    return message.reply(
-        `📅 **Ponto fechado com sucesso!**\n\n**Usuário:** ${message.author.username}\n🕒 **Início:** ${formatarDataHora(inicio)}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${pontos[userId].duracao}`
-    );
+    return message.reply({
+        embeds: [
+            {
+                color: 0xf44336, // Vermelho
+                title: "Ponto Fechado com Sucesso!",
+                description: `**Usuário:** ${message.author.username}\n\n**Início:** ${formatarDataHora(inicio)}\n**Fim:** ${formatarDataHora(fim)}\n\n**Duração:** ${pontos[userId].duracao}`,
+                footer: {
+                    text: "Bom descanso! 😊",
+                },
+                timestamp: new Date(),
+            },
+        ],
+    });
 }
 
 
@@ -128,6 +193,10 @@ client.on('messageCreate', (message) => {
 
     if (message.content === '!fechar') {
         fecharPonto(message, userId);
+    }
+
+    if (message.content === '!info') {
+        infoPonto(message);
     }
 });
 
@@ -166,9 +235,19 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         );
 
         if (batePontoChannel) {
-            batePontoChannel.send(
-                `📅 **Ponto fechado automaticamente!**\n\n**Usuário:** ${userPoint.nome}\n🕒 **Início:** ${formatarDataHora(inicio)}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${pontos[userId].duracao}`
-            );
+            batePontoChannel.send({
+                embeds: [
+                    {
+                        color: 0x2196f3, // Azul
+                        title: "Ponto Fechado Automaticamente!",
+                        description: `**Usuário:** ${userPoint.nome}\n\n**Início:** ${formatarDataHora(inicio)}\n**Fim:** ${formatarDataHora(fim)}\n\n**Duração:** ${pontos[userId].duracao}`,
+                        footer: {
+                            text: "Evite sair do canal sem fechar o ponto.",
+                        },
+                        timestamp: new Date(),
+                    },
+                ],
+            });
         }
     }
 });
