@@ -21,9 +21,9 @@ const canaisPermitidos = [
     '🚓 𝐏𝐓𝐑 ¹',
     '🚓 𝐏𝐓𝐑 ²',
     '🚓 𝐏𝐓𝐑 ³',
-    '🚓 𝐏𝐓𝐑 ALFA',
-    '🚓 𝐏𝐓𝐑 BRAVO',
-    '🚓 𝐏𝐓𝐑 CHARLIE',
+    '🚓 𝐏𝐓𝐑 ⁴',
+    '🚓 𝐏𝐓𝐑 ⁵',
+    '🚓 𝐏𝐓𝐑 ⁶',
     '🚓 𝐏𝐓𝐑 DELTA',
     '🚓 𝐏𝐓𝐑 fundadores'
 ];
@@ -67,7 +67,7 @@ function abrirPonto(message, userId) {
 
     if (pontos[userId]?.aberto) {
         return message.reply(
-            `⛔ **Ponto já aberto!**\nVocê já tem um ponto aberto, ${message.author.username}.\nUse \`!bater\` para finalizar o ponto.`
+            `⛔ **Ponto já aberto!**\nVocê já tem um ponto aberto, ${message.author.username}.\nUse \`!fechar\` para finalizar o ponto.`
         );
     }
 
