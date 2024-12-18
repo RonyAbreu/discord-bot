@@ -107,19 +107,6 @@ function fecharPonto(message, userId) {
     );
 }
 
-// Função para visualizar o ponto
-function visualizarPonto(message, userId) {
-    if (!pontos[userId]) {
-        return message.reply('⛔ Você não tem nenhum registro de ponto.');
-    }
-
-    const { nome, inicio, fim, duracao, aberto } = pontos[userId];
-    const detalhes = aberto
-        ? `🕒 **Início:** ${formatarDataHora(inicio)}\n⏳ **Status:** Ponto Aberto`
-        : `🕒 **Início:** ${formatarDataHora(inicio)}\n🕒 **Fim:** ${formatarDataHora(fim)}\n⏳ **Duração:** ${duracao}`;
-
-    return message.reply(`📋 **Dados do Ponto de ${nome}:**\n\n${detalhes}`);
-}
 
 // Evento quando o bot está pronto
 client.once('ready', () => {
@@ -141,10 +128,6 @@ client.on('messageCreate', (message) => {
 
     if (message.content === '!fechar') {
         fecharPonto(message, userId);
-    }
-
-    if (message.content === '!meuponto') {
-        visualizarPonto(message, userId);
     }
 });
 
